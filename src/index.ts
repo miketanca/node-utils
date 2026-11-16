@@ -1,7 +1,10 @@
-import { runRemoteCommand } from "./ssh-remote.js";
+import { testLogRead } from "./cloudwatch-logs.js";
 
-const result = await runRemoteCommand("aws dynamodb scan --table-name test");
-const obj = JSON.parse(result);
-console.log(obj);
+await testLogRead();
+
+// import { runRemoteCommand } from "./ssh-remote.js";
+// const result = await runRemoteCommand("aws dynamodb scan --table-name test");
+// const obj = JSON.parse(result);
+// console.log(obj);
 
 // await testDynamoRead();
