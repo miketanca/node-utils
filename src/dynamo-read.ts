@@ -1,8 +1,8 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
-  ScanCommand,
   GetCommand,
+  ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 export const TABLE_NAME = "test";
@@ -49,4 +49,21 @@ export async function getItemById(id: string) {
 /** Close the underlying DynamoDB client connection. */
 export function destroyClient() {
   client.destroy();
+}
+
+export async function testDynamoRead() {
+  try {
+    const items = await scanAllItems();
+    console.log(`Found ${items.length} item(s) in table "${TABLE_NAME}":`);
+    console.log(JSON.stringify(items, null, 2));
+
+    // Example of reading a single item by key:
+    // const item = await getItemById("some-id");
+    // console.log("Single item:", item);
+  } catch (error) {
+    console.error("DynamoDB read error:", error);
+    process.exitCode = 1;
+  } finally {
+    destroyClient();
+  }
 }
