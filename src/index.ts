@@ -1,5 +1,6 @@
 import { testLogRead } from "./cloudwatch-logs.js";
 
+// await testLogWrite();
 await testLogRead();
 
 // import { runRemoteCommand } from "./ssh-remote.js";

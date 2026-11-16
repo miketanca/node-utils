@@ -1,6 +1,9 @@
 import {
   CloudWatchLogsClient,
+  CreateLogStreamCommand,
   FilterLogEventsCommand,
+  PutLogEventsCommand,
+  ResourceAlreadyExistsException,
   type FilteredLogEvent,
 } from "@aws-sdk/client-cloudwatch-logs";
 import { writeFile } from "node:fs/promises";
@@ -56,6 +59,33 @@ export async function writeLogGroupToFile(filePath: string) {
   return events.length;
 }
 
+/** Write a message to the log group, creating the log stream if it doesn't exist. */
+export async function writeLogMessage(
+  message: string,
+  logStreamName = "default",
+) {
+  try {
+    await client.send(
+      new CreateLogStreamCommand({
+        logGroupName: LOG_GROUP_NAME,
+        logStreamName,
+      }),
+    );
+  } catch (error) {
+    if (!(error instanceof ResourceAlreadyExistsException)) {
+      throw error;
+    }
+  }
+
+  await client.send(
+    new PutLogEventsCommand({
+      logGroupName: LOG_GROUP_NAME,
+      logStreamName,
+      logEvents: [{ timestamp: Date.now(), message }],
+    }),
+  );
+}
+
 /** Close the underlying CloudWatch Logs client connection. */
 export function destroyLogsClient() {
   client.destroy();
@@ -69,6 +99,20 @@ export async function testLogRead(filePath = "log-group-test.log") {
     );
   } catch (error) {
     console.error("CloudWatch Logs read error:", error);
+    process.exitCode = 1;
+  } finally {
+    destroyLogsClient();
+  }
+}
+
+export async function testLogWrite(
+  message = `Test message written at ${new Date().toISOString()}`,
+) {
+  try {
+    await writeLogMessage(message);
+    console.log(`Wrote message to log group "${LOG_GROUP_NAME}": ${message}`);
+  } catch (error) {
+    console.error("CloudWatch Logs write error:", error);
     process.exitCode = 1;
   } finally {
     destroyLogsClient();
