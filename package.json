@@ -24,6 +24,8 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1169.0",
+    "@aws-sdk/lib-dynamodb": "^3.1169.0",
     "node-ssh": "^13.2.1"
   }
 }
