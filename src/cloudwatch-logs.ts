@@ -63,9 +63,9 @@ export function destroyLogsClient() {
 
 export async function testLogRead(filePath = "log-group-test.log") {
   try {
-    const count = await writeLogGroupToFile(filePath);
+    const events = await readAllLogEvents();
     console.log(
-      `Wrote ${count} event(s) from log group "${LOG_GROUP_NAME}" to "${filePath}"`,
+      `Read ${events.length} event(s) from log group "${LOG_GROUP_NAME}"`,
     );
   } catch (error) {
     console.error("CloudWatch Logs read error:", error);
