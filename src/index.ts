@@ -19,6 +19,10 @@ async function runRemoteCommand() {
     console.log("STDOUT:", result.stdout);
     console.log("STDERR:", result.stderr);
     console.log("EXIT CODE:", result.code);
+
+    await ssh.getFile("/Temp/readme.txt", "readme.txt");
+
+    console.log("File downloaded successfully.");
   } catch (error) {
     console.error("SSH Connection Error:", error);
   } finally {
