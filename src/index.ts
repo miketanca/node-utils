@@ -1,7 +1,10 @@
-import { testLogRead } from "./cloudwatch-logs.js";
+import { deployStreamLambda } from "./deploy-stream-lambda.js";
 
+await deployStreamLambda();
+
+// import { testLogRead } from "./cloudwatch-logs.js";
 // await testLogWrite();
-await testLogRead();
+// await testLogRead();
 
 // import { runRemoteCommand } from "./ssh-remote.js";
 // const result = await runRemoteCommand("aws dynamodb scan --table-name test");
