@@ -6,3 +6,10 @@ aws lambda invoke ^
     --cli-binary-format raw-in-base64-out ^
     --payload "{ \"key\": \"value\" }" ^
     response.json
+
+*
+aws lambda list-functions ^
+    --query "Functions[?contains(FunctionName, `test`)].FunctionName"
+
+*
+aws dynamodb list-tables --query "TableNames[?contains(@, `test`)]"
