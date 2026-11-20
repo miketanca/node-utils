@@ -1,0 +1,8 @@
+
+*
+
+aws lambda invoke ^
+    --function-name test-table-stream-handler ^
+    --cli-binary-format raw-in-base64-out ^
+    --payload "{ \"key\": \"value\" }" ^
+    response.json
