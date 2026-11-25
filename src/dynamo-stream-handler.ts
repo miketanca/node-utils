@@ -1,29 +1,46 @@
 import { unmarshall } from "@aws-sdk/util-dynamodb";
 import type { AttributeValue } from "@aws-sdk/client-dynamodb";
-import type { DynamoDBStreamHandler } from "aws-lambda";
+import type { DynamoDBStreamEvent, DynamoDBBatchResponse } from "aws-lambda";
+import { SendMessageCommand, SQSClient } from "@aws-sdk/client-sqs";
+import { parseStreamEvent } from "./stream-event.js";
 
-/**
- * Lambda handler invoked by the DynamoDB stream of the "test" table.
- * Logs every INSERT / MODIFY / REMOVE event with unmarshalled images.
- */
-export const handler: DynamoDBStreamHandler = async (event) => {
-  console.log(`Received ${event.Records.length} stream record(s)`);
+const sqs = new SQSClient({});
 
-  for (const record of event.Records) {
-    const { eventName, dynamodb } = record;
+export function createStreamHandler(
+  send: (body: string) => Promise<void>,
+) {
+  return async (event: DynamoDBStreamEvent): Promise<DynamoDBBatchResponse> => {
+    console.log(`Received ${event.Records.length} stream record(s)`);
+    for (const record of event.Records) {
+      try {
+        const { eventName, dynamodb } = record;
+        const image = (value: Record<string, unknown> | undefined) =>
+          value ? unmarshall(value as Record<string, AttributeValue>) : undefined;
+        const body = JSON.stringify({
+          eventID: record.eventID,
+          eventName,
+          eventSourceARN: record.eventSourceARN,
+          approximateCreationDateTime: dynamodb?.ApproximateCreationDateTime,
+          keys: image(dynamodb?.Keys),
+          newImage: image(dynamodb?.NewImage),
+          oldImage: image(dynamodb?.OldImage),
+        });
+        parseStreamEvent(body);
+        await send(body);
+      } catch (error) {
+        console.error(`Failed to enqueue stream record ${record.eventID}`, error);
+        if (!record.dynamodb?.SequenceNumber) throw error;
+        return {
+          batchItemFailures: [{ itemIdentifier: record.dynamodb.SequenceNumber }],
+        };
+      }
+    }
+    return { batchItemFailures: [] };
+  };
+}
 
-    const keys = dynamodb?.Keys
-      ? unmarshall(dynamodb.Keys as Record<string, AttributeValue>)
-      : undefined;
-    const newImage = dynamodb?.NewImage
-      ? unmarshall(dynamodb.NewImage as Record<string, AttributeValue>)
-      : undefined;
-    const oldImage = dynamodb?.OldImage
-      ? unmarshall(dynamodb.OldImage as Record<string, AttributeValue>)
-      : undefined;
-
-    console.log(
-      JSON.stringify({ eventName, keys, newImage, oldImage }, null, 2),
-    );
-  }
-};
+export const handler = createStreamHandler(async (body) => {
+  const QueueUrl = process.env.QUEUE_URL;
+  if (!QueueUrl) throw new Error("QUEUE_URL is required");
+  await sqs.send(new SendMessageCommand({ QueueUrl, MessageBody: body }));
+});
