@@ -13,3 +13,12 @@ aws lambda list-functions ^
 
 *
 aws dynamodb list-tables --query "TableNames[?contains(@, `test`)]"
+
+* 
+
+aws dynamodb describe-table ^
+  --table-name test ^
+  --query "Table.SSEDescription"
+
+if it AWS owned key, the result is null,
+other options are AWS managed key, or Customer Managed Key
